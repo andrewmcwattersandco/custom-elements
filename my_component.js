@@ -1,27 +1,12 @@
-class MyComponent extends HTMLElement {
+class MyComponent extends BaseElement {
   constructor() {
     super();
-    this.attachShadow({mode: 'open'});
-    this._renderId = null;
+    this.attachShadow({ mode: 'open' });
     this._controller = null;
-    this.error = null;
-    this.isLoaded = false;
-    this._items = [];
-  }
-
-  get items() {
-    return this._items;
-  }
-
-  set items(value) {
-    this._items = value;
-    this._scheduleRender();
   }
 
   connectedCallback() {
-    this.error = null;
-    this.isLoaded = false;
-    this._items = [];
+    this.setState({ error: null, isLoaded: false, items: [] });
     this._controller = new AbortController();
     (async () => {
       try {
@@ -30,35 +15,19 @@ class MyComponent extends HTMLElement {
         });
         if (!res.ok) throw new Error(await res.text());
         const result = await res.json();
-        this.isLoaded = true;
-        this.items = result;
+        this.setState({ isLoaded: true, items: result });
       } catch (error) {
         if (error.name === 'AbortError') return;
-        this.isLoaded = true;
-        this.error = error;
-        this._scheduleRender();
+        this.setState({ isLoaded: true, error });
       }
     })();
   }
 
   disconnectedCallback() {
+    super.disconnectedCallback();
     if (this._controller) {
       this._controller.abort();
       this._controller = null;
-    }
-    if (this._renderId) {
-      cancelAnimationFrame(this._renderId);
-      this._renderId = null;
-    }
-  }
-
-  _scheduleRender() {
-    if (!this.isConnected) return;
-    if (!this._renderId) {
-      this._renderId = requestAnimationFrame(() => {
-        this._renderId = null;
-        this.render();
-      });
     }
   }
 
@@ -70,8 +39,7 @@ class MyComponent extends HTMLElement {
       shadowRoot.innerHTML = /* html */ `<div>Loading...</div>`;
     } else {
       shadowRoot.innerHTML = /* html */ `<ul>
-${items.map((item) => `  <li>${item.name} ${item.price}</li>
-`).join('')}
+${items.map((item) => `  <li>${item.name} ${item.price}</li>`).join('\n')}
 </ul>`;
     }
   }
