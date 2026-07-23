@@ -2,7 +2,7 @@ class BaseElement extends HTMLElement {
   constructor() {
     super();
     this._renderId = null;
-    this._controller = null;
+    this._controllers = [];
     this._resourceKeys = [];
   }
 
@@ -27,37 +27,39 @@ class BaseElement extends HTMLElement {
   }
 
   fetchData(url) {
-    if (this._controller) {
-      this._controller.abort();
-    }
-
     const controller = new AbortController();
-    this._controller = controller;
+    this._controllers = [...this._controllers, controller];
     const { signal } = controller;
 
     const resource = { error: null, readyState: 'pending', data: null };
     resource[Symbol.for('isResource')] = true;
 
+    const cleanup = () => {
+      this._controllers = this._controllers.filter((c) => c !== controller);
+    };
+
     (async () => {
       try {
         const res = await fetch(url, { signal });
         const response = await this._parseBody(res);
+        if (signal.aborted) { cleanup(); return; }
         if (!res.ok) {
           const message = typeof response === 'string' ? response : response?.message || res.statusText;
           throw new Error(message);
         }
-        if (signal.aborted) return;
         resource.error = null;
         resource.readyState = 'done';
         resource.data = response;
+        cleanup();
         this.setState(this._getResourceState());
       } catch (error) {
-        if (error.name === 'AbortError') return;
+        if (error.name === 'AbortError') { cleanup(); return; }
         console.error(error);
-        if (signal.aborted) return;
+        if (signal.aborted) { cleanup(); return; }
         resource.error = error;
         resource.readyState = 'done';
         resource.data = null;
+        cleanup();
         this.setState(this._getResourceState());
       }
     })();
@@ -87,9 +89,7 @@ class BaseElement extends HTMLElement {
       cancelAnimationFrame(this._renderId);
       this._renderId = null;
     }
-    if (this._controller) {
-      this._controller.abort();
-      this._controller = null;
-    }
+    this._controllers.forEach((c) => c.abort());
+    this._controllers = [];
   }
 }
