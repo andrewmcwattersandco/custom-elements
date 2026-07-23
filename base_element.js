@@ -6,11 +6,6 @@ class BaseElement extends HTMLElement {
     this._resourceKeys = [];
   }
 
-  setState(patch) {
-    Object.assign(this, patch);
-    this._scheduleRender();
-  }
-
   async _parseBody(res) {
     const type = res.headers.get('content-type') || '';
 
@@ -31,7 +26,7 @@ class BaseElement extends HTMLElement {
     return { readyState, error };
   }
 
-  async fetchState(urls) {
+  fetchData(url) {
     if (this._controller) {
       this._controller.abort();
     }
@@ -39,39 +34,43 @@ class BaseElement extends HTMLElement {
     const controller = new AbortController();
     this._controller = controller;
     const { signal } = controller;
-    const keys = Object.keys(urls);
 
-    const staleKeys = this._resourceKeys.filter((key) => !keys.includes(key));
-    staleKeys.forEach((key) => delete this[key]);
+    const resource = { error: null, readyState: 'pending', data: null };
+    resource[Symbol.for('isResource')] = true;
 
-    this._resourceKeys = keys;
-
-    this.setState({
-      ...Object.fromEntries(
-        keys.map((key) => [key, { error: null, readyState: 'pending', response: null }])
-      ),
-      ...this._getResourceState(),
-    });
-
-    keys.forEach(async (key) => {
+    (async () => {
       try {
-        const res = await fetch(urls[key], { signal });
+        const res = await fetch(url, { signal });
         const response = await this._parseBody(res);
         if (!res.ok) {
           const message = typeof response === 'string' ? response : response?.message || res.statusText;
           throw new Error(message);
         }
         if (signal.aborted) return;
-        this[key] = { error: null, readyState: 'done', response };
+        resource.error = null;
+        resource.readyState = 'done';
+        resource.data = response;
         this.setState(this._getResourceState());
       } catch (error) {
         if (error.name === 'AbortError') return;
         console.error(error);
         if (signal.aborted) return;
-        this[key] = { error, readyState: 'done', response: null };
+        resource.error = error;
+        resource.readyState = 'done';
+        resource.data = null;
         this.setState(this._getResourceState());
       }
-    });
+    })();
+
+    return resource;
+  }
+
+  setState(patch) {
+    const keys = Object.keys(patch);
+    const newResourceKeys = keys.filter((key) => patch[key]?.[Symbol.for('isResource')]);
+    this._resourceKeys = [...new Set([...this._resourceKeys, ...newResourceKeys])];
+    Object.assign(this, patch);
+    this._scheduleRender();
   }
 
   _scheduleRender() {

@@ -5,7 +5,7 @@ class MyComponent extends BaseElement {
   }
 
   connectedCallback() {
-    this.fetchState({ items: 'https://api.example.com/items' });
+    this.setState({ items: this.fetchData('https://api.example.com/items') });
   }
 
   render() {
@@ -16,7 +16,7 @@ class MyComponent extends BaseElement {
       shadowRoot.innerHTML = /* html */ `<div>Loading...</div>`;
     } else {
       shadowRoot.innerHTML = /* html */ `<ul>
-${items.response.map((item) => `  <li>${item.name} ${item.price}</li>`).join('\n')}
+${items.data.map((item) => `  <li>${item.name} ${item.price}</li>`).join('\n')}
 </ul>`;
     }
   }
