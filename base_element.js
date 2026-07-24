@@ -75,23 +75,17 @@ class BaseElement extends HTMLElement {
     const keys = Object.keys(patch);
     if (keys.length === 0) return;
 
-    // Check if anything actually changed before proceeding
-    let hasChanges = false;
-    for (const key of keys) {
-      const newVal = patch[key];
-      const oldVal = this[key];
+    // Detect whether anything actually changed before proceeding.
+    const changedKeys = keys.filter((key) => patch[key] !== this[key]);
+    if (changedKeys.length === 0) return;
 
-      if (newVal !== oldVal) {
-        // A new resource object is always a change, even if its fields
-        // currently match the old one (e.g. two pending fetches in a row).
-        if (oldVal?.[Symbol.for('isResource')]) {
-          oldVal[Symbol.for('controller')]?.abort();
-        }
-        hasChanges = true;
+    // Abort any resource being replaced/dropped by this patch.
+    for (const key of changedKeys) {
+      const oldVal = this[key];
+      if (oldVal?.[Symbol.for('isResource')]) {
+        oldVal[Symbol.for('controller')]?.abort();
       }
     }
-
-    if (!hasChanges) return;
 
     const newResourceKeys = keys.filter((key) => patch[key]?.[Symbol.for('isResource')]);
     const droppedResourceKeys = keys.filter((key) => !patch[key]?.[Symbol.for('isResource')]);
