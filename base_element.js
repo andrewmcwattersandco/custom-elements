@@ -44,6 +44,7 @@ class BaseElement extends HTMLElement {
         const res = await fetch(url, { signal });
         if (signal.aborted) { cleanup(); return; }
         const response = await this._parseBody(res);
+        if (signal.aborted) { cleanup(); return; }
         if (!res.ok) {
           const message = typeof response === 'string' ? response : response?.message || res.statusText;
           throw new Error(message);
