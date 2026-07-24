@@ -118,5 +118,7 @@ class BaseElement extends HTMLElement {
     }
     this._controllers.forEach((c) => c.abort());
     this._controllers = [];
+    this._resourceKeys.forEach((key) => { delete this[key]; });
+    this._resourceKeys = [];
   }
 }
