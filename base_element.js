@@ -80,19 +80,10 @@ class BaseElement extends HTMLElement {
       const oldVal = this[key];
 
       if (newVal !== oldVal) {
-        // For resource objects, compare internal state properties
-        if (newVal?.[Symbol.for('isResource')]) {
-          if (newVal.readyState !== oldVal?.readyState ||
-              newVal.error !== oldVal?.error ||
-              newVal.data !== oldVal?.data) {
-            hasChanges = true;
-            break;
-          }
-        } else {
-          // Shallow comparison for regular values
-          hasChanges = true;
-          break;
-        }
+        // A new resource object is always a change, even if its fields
+        // currently match the old one (e.g. two pending fetches in a row).
+        hasChanges = true;
+        break;
       }
     }
 
