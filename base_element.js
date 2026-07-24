@@ -87,7 +87,6 @@ class BaseElement extends HTMLElement {
           oldVal[Symbol.for('controller')]?.abort();
         }
         hasChanges = true;
-        break;
       }
     }
 
