@@ -54,6 +54,7 @@ class BaseElement extends HTMLElement {
         }
         cleanup();
         const key = this._resourceKeys.find((k) => this[k] === resource);
+        if (key === undefined) return;
         const newResource = { error: null, readyState: 'done', data: response };
         newResource[IS_RESOURCE] = true;
         this.setState({ [key]: newResource });
@@ -63,6 +64,7 @@ class BaseElement extends HTMLElement {
         if (signal.aborted) { cleanup(); return; }
         cleanup();
         const key = this._resourceKeys.find((k) => this[k] === resource);
+        if (key === undefined) return;
         const newResource = { error, readyState: 'done', data: null };
         newResource[IS_RESOURCE] = true;
         this.setState({ [key]: newResource });
