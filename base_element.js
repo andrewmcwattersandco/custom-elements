@@ -1,3 +1,6 @@
+const IS_RESOURCE = Symbol('isResource');
+const CONTROLLER = Symbol('controller');
+
 class BaseElement extends HTMLElement {
   constructor() {
     super();
@@ -32,8 +35,8 @@ class BaseElement extends HTMLElement {
     const { signal } = controller;
 
     const resource = { error: null, readyState: 'pending', data: null };
-    resource[Symbol.for('isResource')] = true;
-    resource[Symbol.for('controller')] = controller;
+    resource[IS_RESOURCE] = true;
+    resource[CONTROLLER] = controller;
 
     const cleanup = () => {
       this._controllers = this._controllers.filter((c) => c !== controller);
@@ -52,7 +55,7 @@ class BaseElement extends HTMLElement {
         cleanup();
         const key = this._resourceKeys.find((k) => this[k] === resource);
         const newResource = { error: null, readyState: 'done', data: response };
-        newResource[Symbol.for('isResource')] = true;
+        newResource[IS_RESOURCE] = true;
         this.setState({ [key]: newResource });
       } catch (error) {
         if (error.name === 'AbortError') { cleanup(); return; }
@@ -61,7 +64,7 @@ class BaseElement extends HTMLElement {
         cleanup();
         const key = this._resourceKeys.find((k) => this[k] === resource);
         const newResource = { error, readyState: 'done', data: null };
-        newResource[Symbol.for('isResource')] = true;
+        newResource[IS_RESOURCE] = true;
         this.setState({ [key]: newResource });
       }
     })();
@@ -82,13 +85,13 @@ class BaseElement extends HTMLElement {
     // Abort any resource being replaced/dropped by this patch.
     for (const key of changedKeys) {
       const oldVal = this[key];
-      if (oldVal?.[Symbol.for('isResource')] && oldVal.readyState !== 'done') {
-        oldVal[Symbol.for('controller')]?.abort();
+      if (oldVal?.[IS_RESOURCE] && oldVal.readyState !== 'done') {
+        oldVal[CONTROLLER]?.abort();
       }
     }
 
-    const newResourceKeys = keys.filter((key) => patch[key]?.[Symbol.for('isResource')]);
-    const droppedResourceKeys = keys.filter((key) => !patch[key]?.[Symbol.for('isResource')]);
+    const newResourceKeys = keys.filter((key) => patch[key]?.[IS_RESOURCE]);
+    const droppedResourceKeys = keys.filter((key) => !patch[key]?.[IS_RESOURCE]);
     this._resourceKeys = [...new Set([...this._resourceKeys, ...newResourceKeys])]
       .filter((key) => !droppedResourceKeys.includes(key));
     Object.assign(this, patch);
