@@ -110,6 +110,13 @@ class BaseElement extends HTMLElement {
     });
   }
 
+  // Intentionally minimal: mirrors native element behavior, where
+  // disconnecting from the DOM doesn't cancel in-flight network activity
+  // or clear element state. In-flight fetches complete naturally, and
+  // resource data persists across a disconnect/reconnect. _scheduleRender's
+  // isConnected guard already prevents rendering into a detached element,
+  // so there's no need to abort here. (Do not "fix" this by re-adding
+  // controller.abort() / resource deletion — that was removed on purpose.)
   disconnectedCallback() {
     if (this._renderId) {
       cancelAnimationFrame(this._renderId);
