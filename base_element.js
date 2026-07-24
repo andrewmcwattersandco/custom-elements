@@ -82,7 +82,7 @@ class BaseElement extends HTMLElement {
     // Abort any resource being replaced/dropped by this patch.
     for (const key of changedKeys) {
       const oldVal = this[key];
-      if (oldVal?.[Symbol.for('isResource')]) {
+      if (oldVal?.[Symbol.for('isResource')] && oldVal.readyState !== 'done') {
         oldVal[Symbol.for('controller')]?.abort();
       }
     }
