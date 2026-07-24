@@ -115,9 +115,5 @@ class BaseElement extends HTMLElement {
       cancelAnimationFrame(this._renderId);
       this._renderId = null;
     }
-    this._controllers.forEach((c) => c.abort());
-    this._controllers = [];
-    this._resourceKeys.forEach((key) => { delete this[key]; });
-    this._resourceKeys = [];
   }
 }
