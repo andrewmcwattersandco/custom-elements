@@ -100,7 +100,8 @@ class BaseElement extends HTMLElement {
 
     const newResourceKeys = keys.filter((key) => patch[key]?.[Symbol.for('isResource')]);
     this._resourceKeys = [...new Set([...this._resourceKeys, ...newResourceKeys])];
-    Object.assign(this, patch, this._getResourceState());
+    Object.assign(this, patch);
+    Object.assign(this, this._getResourceState());
     this._scheduleRender();
   }
 
