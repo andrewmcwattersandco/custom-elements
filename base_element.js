@@ -48,20 +48,20 @@ class BaseElement extends HTMLElement {
           const message = typeof response === 'string' ? response : response?.message || res.statusText;
           throw new Error(message);
         }
-        resource.error = null;
-        resource.readyState = 'done';
-        resource.data = response;
         cleanup();
-        this.setState(this._getResourceState());
+        const key = this._resourceKeys.find((k) => this[k] === resource);
+        const newResource = { error: null, readyState: 'done', data: response };
+        newResource[Symbol.for('isResource')] = true;
+        this.setState({ [key]: newResource });
       } catch (error) {
         if (error.name === 'AbortError') { cleanup(); return; }
         console.error(error);
         if (signal.aborted) { cleanup(); return; }
-        resource.error = error;
-        resource.readyState = 'done';
-        resource.data = null;
         cleanup();
-        this.setState(this._getResourceState());
+        const key = this._resourceKeys.find((k) => this[k] === resource);
+        const newResource = { error, readyState: 'done', data: null };
+        newResource[Symbol.for('isResource')] = true;
+        this.setState({ [key]: newResource });
       }
     })();
 
