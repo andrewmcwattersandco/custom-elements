@@ -68,7 +68,36 @@ class BaseElement extends HTMLElement {
   }
 
   setState(patch) {
+    if (!patch || typeof patch !== 'object') return;
+
     const keys = Object.keys(patch);
+    if (keys.length === 0) return;
+
+    // Check if anything actually changed before proceeding
+    let hasChanges = false;
+    for (const key of keys) {
+      const newVal = patch[key];
+      const oldVal = this[key];
+
+      if (newVal !== oldVal) {
+        // For resource objects, compare internal state properties
+        if (newVal?.[Symbol.for('isResource')]) {
+          if (newVal.readyState !== oldVal?.readyState ||
+              newVal.error !== oldVal?.error ||
+              newVal.data !== oldVal?.data) {
+            hasChanges = true;
+            break;
+          }
+        } else {
+          // Shallow comparison for regular values
+          hasChanges = true;
+          break;
+        }
+      }
+    }
+
+    if (!hasChanges) return;
+
     const newResourceKeys = keys.filter((key) => patch[key]?.[Symbol.for('isResource')]);
     this._resourceKeys = [...new Set([...this._resourceKeys, ...newResourceKeys])];
     Object.assign(this, patch, this._getResourceState());
