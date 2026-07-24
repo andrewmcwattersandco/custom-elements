@@ -94,7 +94,9 @@ class BaseElement extends HTMLElement {
     if (!hasChanges) return;
 
     const newResourceKeys = keys.filter((key) => patch[key]?.[Symbol.for('isResource')]);
-    this._resourceKeys = [...new Set([...this._resourceKeys, ...newResourceKeys])];
+    const droppedResourceKeys = keys.filter((key) => !patch[key]?.[Symbol.for('isResource')]);
+    this._resourceKeys = [...new Set([...this._resourceKeys, ...newResourceKeys])]
+      .filter((key) => !droppedResourceKeys.includes(key));
     Object.assign(this, patch);
     Object.assign(this, this._getResourceState());
     this._scheduleRender();
