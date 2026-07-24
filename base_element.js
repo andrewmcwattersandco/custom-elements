@@ -83,7 +83,7 @@ class BaseElement extends HTMLElement {
       if (newVal !== oldVal) {
         // A new resource object is always a change, even if its fields
         // currently match the old one (e.g. two pending fetches in a row).
-        if (oldVal?.[Symbol.for('isResource')] && newVal?.[Symbol.for('isResource')]) {
+        if (oldVal?.[Symbol.for('isResource')]) {
           oldVal[Symbol.for('controller')]?.abort();
         }
         hasChanges = true;
